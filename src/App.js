@@ -12,7 +12,7 @@ const KakapoChatbot = () => {
 
   // Image URLs - Place your images in the public/images/ folder of your React project
   const images = {
-    welcomeBg: '/images/welcome-background.png',
+    welcomeBg: '/images/welcome-background.jpg',
     kakapoOnBranch: '/images/kakapo-on-branch.png',
     loadingScreen: '/images/loading-screen.png',
     errorScreen: '/images/error-screen.png',
