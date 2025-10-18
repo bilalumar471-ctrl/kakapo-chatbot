@@ -65,7 +65,7 @@ const KakapoChatbot = () => {
       setIsTyping(true);
       
       // Replace with your backend API endpoint
-      const response = await fetch('https://kakapo-backend.onrender.com', {
+      const response = await fetch('https://kakapo-backend.onrender.com/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -145,7 +145,7 @@ const KakapoChatbot = () => {
   const handleResetChat = async () => {
     try {
       // Send "the_end" intent to backend
-      await fetch('https://kakapo-backend.onrender.com', {
+      await fetch('https://kakapo-backend.onrender.com/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
