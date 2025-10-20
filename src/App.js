@@ -264,7 +264,7 @@ const KakapoChatbot = () => {
               WebkitTextFillColor: 'transparent',
               filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.3))'
             }}>
-            Kia Ora! I'm<br/>KākapoBot!
+            Kia Ora! I'm<br/>Mosska!
           </h1>
           <p className="text-xl md:text-2xl text-white mb-12 animate-slide-up drop-shadow-lg">
             Your expert guide to all things Kākapo.
