@@ -16,9 +16,9 @@ const KakapoChatbot = () => {
   // Image URLs
   const images = {
     welcomeBg: '/images/welcome-background.jpg',
-    kakapoOnBranch: '/images/kakapo-on-branch.jpg',
-    loadingScreen: '/images/loading-screen.jpg',
-    errorScreen: '/images/error-screen.jpg',
+    kakapoOnBranch: '/images/kakapo-on-branch.png',
+    loadingScreen: '/images/loading-screen.png',
+    errorScreen: '/images/error-screen.png',
     chatBg: '/images/chat-background.jpg',
     avatar: '/images/avatar.jpg'
   };
