@@ -84,6 +84,19 @@ const KakapoChatbot = () => {
     }
   };
 
+  // Format text with markdown-style bold and italic
+  const formatText = (text) => {
+    if (!text) return '';
+    
+    // Convert **text** to <strong>text</strong>
+    let formatted = text.replace(/\*\*([^\*]+)\*\*/g, '<strong>$1</strong>');
+    
+    // Convert *text* to <em>text</em> (but not if it's already part of **)
+    formatted = formatted.replace(/(?<!\*)\*([^\*]+)\*(?!\*)/g, '<em>$1</em>');
+    
+    return formatted;
+  };
+
   // Add bot message
   const addBotMessage = (text, imageUrl = null) => {
     const newMessage = {
@@ -403,7 +416,12 @@ const KakapoChatbot = () => {
                     ? 'bg-gradient-to-br from-green-300 to-green-400 text-gray-900' 
                     : 'bg-gradient-to-br from-teal-700 to-teal-800 text-white'
                 }`}>
-                  {msg.text && <p className="text-sm md:text-base leading-relaxed mb-2">{msg.text}</p>}
+                  {msg.text && (
+                    <p 
+                      className="text-sm md:text-base leading-relaxed mb-2"
+                      dangerouslySetInnerHTML={{ __html: formatText(msg.text) }}
+                    />
+                  )}
                   {msg.image && (
                     <img 
                       src={msg.image} 
@@ -521,6 +539,10 @@ const KakapoChatbot = () => {
         .animate-slide-down { animation: slide-down 0.6s ease-out; }
         .animate-slide-up { animation: slide-up 0.6s ease-out; }
         .animate-loading-bar { animation: loading-bar 2.5s ease-out forwards; }
+        
+        /* Formatting styles */
+        strong { font-weight: 700; }
+        em { font-style: italic; }
       `}</style>
     </div>
   );
