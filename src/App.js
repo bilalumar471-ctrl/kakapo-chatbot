@@ -7,10 +7,13 @@ const KakapoChatbot = () => {
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [userName, setUserName] = useState('');
+  const [isAskingName, setIsAskingName] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Image URLs - Place your images in the public/images/ folder of your React project
+  // Image URLs
   const images = {
     welcomeBg: '/images/welcome-background.jpg',
     kakapoOnBranch: '/images/kakapo-on-branch.png',
@@ -18,6 +21,23 @@ const KakapoChatbot = () => {
     errorScreen: '/images/error-screen.png',
     chatBg: '/images/chat-background.jpg',
     avatar: '/images/avatar.jpg'
+  };
+
+  // Menu options
+  const menuOptions = [
+    'Kakapo Diet',
+    'Habitat',
+    'Conservation',
+    'Behaviour',
+    'General Facts'
+  ];
+
+  // Get time-based greeting
+  const getTimeBasedGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return 'Good morning';
+    if (hour >= 12 && hour < 17) return 'Good afternoon';
+    return 'Good evening';
   };
 
   // Simulate loading
@@ -33,24 +53,44 @@ const KakapoChatbot = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
+  // Check for stored username on mount
+  useEffect(() => {
+    const storedName = localStorage.getItem('kakapo_user_name');
+    if (storedName) {
+      setUserName(storedName);
+    }
+  }, []);
+
   // Start chat
   const handleStartChat = () => {
     setScreen('chat');
-    // Add welcome message
-    setTimeout(() => {
-      addBotMessage(
-        "Kia ora! 🦜 I'm Mosska, a curious Kakapo here to share my world with you! Want to know what I eat, how I live, or why I can't fly? Ask away, I love talking about Kakapos!"
-      );
-    }, 500);
+    const storedName = localStorage.getItem('kakapo_user_name');
+    
+    if (storedName) {
+      // User returning - greet with stored name
+      setUserName(storedName);
+      setTimeout(() => {
+        const greeting = getTimeBasedGreeting();
+        addBotMessage(`${greeting}, ${storedName}! 🦜 What can I do for you today?`);
+        setShowMenu(true);
+      }, 500);
+    } else {
+      // New user - ask for name
+      setTimeout(() => {
+        const greeting = getTimeBasedGreeting();
+        addBotMessage(`${greeting}! 🦜 I'm Mosska, a curious Kakapo here to share my world with you! What's your name?`);
+        setIsAskingName(true);
+      }, 500);
+    }
   };
 
   // Add bot message
-  const addBotMessage = (text, image = null) => {
+  const addBotMessage = (text, imageUrl = null) => {
     const newMessage = {
       id: Date.now(),
       type: 'bot',
       text,
-      image,
+      image: imageUrl,
       timestamp: new Date().toLocaleTimeString('en-US', { 
         hour: '2-digit', 
         minute: '2-digit' 
@@ -64,7 +104,6 @@ const KakapoChatbot = () => {
     try {
       setIsTyping(true);
       
-      // Replace with your backend API endpoint
       const response = await fetch('https://kakapo-backend.onrender.com/chat', {
         method: 'POST',
         headers: {
@@ -85,8 +124,8 @@ const KakapoChatbot = () => {
       
       setIsTyping(false);
       
-      // Add bot response
-      addBotMessage(data.response, data.image || null);
+      // Add bot response with image if available
+      addBotMessage(data.message, data.image_url || null);
       
     } catch (error) {
       console.error('Error:', error);
@@ -122,11 +161,41 @@ const KakapoChatbot = () => {
 
     setMessages(prev => [...prev, newMessage]);
     
-    // Send to Dialogflow
-    sendToDialogflow(inputText, selectedImage);
+    // Check if asking for name
+    if (isAskingName) {
+      const name = inputText.trim();
+      setUserName(name);
+      localStorage.setItem('kakapo_user_name', name);
+      setIsAskingName(false);
+      
+      // Show personalized greeting
+      setTimeout(() => {
+        addBotMessage(`Hello ${name}! 🦜 What can I do for you today?`);
+        setShowMenu(true);
+      }, 500);
+    } else {
+      // Send to Dialogflow
+      sendToDialogflow(inputText, selectedImage);
+    }
     
     setInputText('');
     setSelectedImage(null);
+  };
+
+  // Handle menu button click
+  const handleMenuClick = (option) => {
+    const newMessage = {
+      id: Date.now(),
+      type: 'user',
+      text: option,
+      timestamp: new Date().toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      })
+    };
+
+    setMessages(prev => [...prev, newMessage]);
+    sendToDialogflow(option);
   };
 
   // Handle image upload
@@ -159,9 +228,13 @@ const KakapoChatbot = () => {
       console.error('Error resetting:', error);
     }
     
-    // Reset UI
+    // Reset UI and clear localStorage
     setMessages([]);
+    setUserName('');
+    setShowMenu(false);
+    setIsAskingName(false);
     sessionStorage.removeItem('kakapo_session_id');
+    localStorage.removeItem('kakapo_user_name');
     setScreen('welcome');
   };
 
@@ -188,11 +261,9 @@ const KakapoChatbot = () => {
             alt="Mosska is loading" 
             className="w-full max-w-lg mx-auto animate-fade-in mb-4"
           />
-          {/* Loading text */}
           <h2 className="text-2xl md:text-3xl font-bold mb-4" style={{ color: '#a3e635' }}>
             Mosska is loading...
           </h2>
-          {/* Animated loading bar */}
           <div className="w-96 max-w-full mx-auto">
             <div className="h-3 bg-gray-700 bg-opacity-30 rounded-full overflow-hidden backdrop-blur-sm border border-gray-600 shadow-lg">
               <div className="h-full bg-gradient-to-r from-green-400 via-green-500 to-green-400 rounded-full animate-loading-bar shadow-lg"></div>
@@ -213,7 +284,6 @@ const KakapoChatbot = () => {
           backgroundColor: '#1a3f3f'
         }}>
         <div className="text-center animate-fade-in max-w-2xl">
-          {/* CONNECTION FAILED Title */}
           <h1 
             className="text-5xl md:text-6xl font-black mb-8"
             style={{
@@ -223,19 +293,16 @@ const KakapoChatbot = () => {
             CONNECTION FAILED
           </h1>
           
-          {/* Error Screen Image */}
           <img 
             src={images.errorScreen} 
             alt="Connection Failed" 
             className="w-full max-w-md mx-auto mb-8"
           />
           
-          {/* Error Message */}
           <p className="text-lg md:text-xl text-white mb-8 px-4 leading-relaxed drop-shadow-lg">
             Don't worry, I'm just having bit trouble connecting to my forest network. Please check your internet connection and try again in a moment.
           </p>
           
-          {/* Try Again Button */}
           <button
             onClick={handleRetry}
             className="bg-gradient-to-r from-green-500 to-green-600 text-white px-12 py-4 rounded-full text-xl font-bold hover:from-green-600 hover:to-green-700 transform hover:scale-105 transition-all shadow-lg">
@@ -264,7 +331,7 @@ const KakapoChatbot = () => {
               WebkitTextFillColor: 'transparent',
               filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.3))'
             }}>
-            Kia Ora! I'm<br/>Mosska!
+            Kia Ora! I'm<br/>KākapoBot!
           </h1>
           <p className="text-xl md:text-2xl text-white mb-12 animate-slide-up drop-shadow-lg">
             Your expert guide to all things Kākapo.
@@ -303,7 +370,9 @@ const KakapoChatbot = () => {
             alt="Mosska" 
             className="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover shadow-md"
           />
-          <h2 className="text-xl md:text-2xl font-bold text-green-700">Mosska</h2>
+          <h2 className="text-xl md:text-2xl font-bold text-green-700">
+            {userName ? `Mosska - Chatting with ${userName}` : 'Mosska'}
+          </h2>
         </div>
         <button
           onClick={handleResetChat}
@@ -334,14 +403,14 @@ const KakapoChatbot = () => {
                     ? 'bg-gradient-to-br from-green-300 to-green-400 text-gray-900' 
                     : 'bg-gradient-to-br from-teal-700 to-teal-800 text-white'
                 }`}>
+                  {msg.text && <p className="text-sm md:text-base leading-relaxed mb-2">{msg.text}</p>}
                   {msg.image && (
                     <img 
                       src={msg.image} 
-                      alt="Uploaded" 
-                      className="rounded-2xl mb-2 max-w-full h-auto"
+                      alt="Kakapo" 
+                      className="rounded-2xl max-w-full h-auto"
                     />
                   )}
-                  {msg.text && <p className="text-sm md:text-base leading-relaxed">{msg.text}</p>}
                 </div>
                 <p className={`text-xs text-gray-600 mt-1 px-2 ${msg.type === 'user' ? 'text-right' : 'text-left'}`}>
                   {msg.timestamp}
@@ -349,6 +418,20 @@ const KakapoChatbot = () => {
               </div>
             </div>
           ))}
+          
+          {/* Menu Buttons */}
+          {showMenu && (
+            <div className="flex flex-wrap gap-2 justify-center my-4 animate-fade-in">
+              {menuOptions.map((option, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleMenuClick(option)}
+                  className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-full text-sm font-semibold hover:from-green-600 hover:to-green-700 transform hover:scale-105 transition-all shadow-md">
+                  {option}
+                </button>
+              ))}
+            </div>
+          )}
           
           {/* Typing Indicator */}
           {isTyping && (
