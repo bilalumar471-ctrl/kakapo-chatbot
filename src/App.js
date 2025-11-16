@@ -16,9 +16,9 @@ const KakapoChatbot = () => {
   // Image URLs
   const images = {
     welcomeBg: '/images/welcome-background.jpg',
-    kakapoOnBranch: '/images/kakapo-on-branch.png',
-    loadingScreen: '/images/loading-screen.png',
-    errorScreen: '/images/error-screen.png',
+    kakapoOnBranch: '/images/kakapo-on-branch.jpg',
+    loadingScreen: '/images/loading-screen.jpg',
+    errorScreen: '/images/error-screen.jpg',
     chatBg: '/images/chat-background.jpg',
     avatar: '/images/avatar.jpg'
   };
@@ -88,14 +88,20 @@ const KakapoChatbot = () => {
   const formatText = (text) => {
     if (!text) return '';
     
+    console.log('Original text:', text); // Debug log
+    
     // First convert **text** to <strong>text</strong>
     let formatted = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    
+    console.log('After bold:', formatted); // Debug log
     
     // Then convert remaining single * to <em>text</em>
     formatted = formatted.replace(/\*(.+?)\*/g, '<em>$1</em>');
     
     // Convert line breaks to <br> tags
     formatted = formatted.replace(/\n/g, '<br>');
+    
+    console.log('Final formatted:', formatted); // Debug log
     
     return formatted;
   };
@@ -379,7 +385,7 @@ const KakapoChatbot = () => {
         backgroundColor: '#c8d5b9'
       }}>
       {/* Header */}
-      <div className="bg-white rounded-3xl shadow-lg mx-4 my-4 p-4 flex items-center justify-between animate-slide-down">
+      <div className="bg-white rounded-3xl shadow-lg mx-4 my-4 p-4 flex items-center justify-between animate-slide-down sticky top-4 z-10">
         <div className="flex items-center gap-3">
           <img 
             src={images.avatar} 
