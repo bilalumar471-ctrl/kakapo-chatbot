@@ -88,12 +88,12 @@ const KakapoChatbot = () => {
   const formatText = (text) => {
     if (!text) return '';
     
-    console.log('Original text:', text); // Debug log
+    console.log('Original text:', text);
     
     // First convert **text** to <strong>text</strong>
     let formatted = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
     
-    console.log('After bold:', formatted); // Debug log
+    console.log('After bold:', formatted);
     
     // Then convert remaining single * to <em>text</em>
     formatted = formatted.replace(/\*(.+?)\*/g, '<em>$1</em>');
@@ -101,7 +101,7 @@ const KakapoChatbot = () => {
     // Convert line breaks to <br> tags
     formatted = formatted.replace(/\n/g, '<br>');
     
-    console.log('Final formatted:', formatted); // Debug log
+    console.log('Final formatted:', formatted);
     
     return formatted;
   };
@@ -384,8 +384,8 @@ const KakapoChatbot = () => {
         backgroundImage: `url('${images.chatBg}')`,
         backgroundColor: '#c8d5b9'
       }}>
-      {/* Header */}
-      <div className="bg-white rounded-3xl shadow-lg mx-4 my-4 p-4 flex items-center justify-between animate-slide-down sticky top-4 z-10">
+      {/* Header - Sticky */}
+      <div className="sticky top-0 z-50 bg-white rounded-b-3xl shadow-lg px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <img 
             src={images.avatar} 
@@ -425,12 +425,14 @@ const KakapoChatbot = () => {
                     ? 'bg-gradient-to-br from-green-300 to-green-400 text-gray-900' 
                     : 'bg-gradient-to-br from-teal-700 to-teal-800 text-white'
                 }`}>
-                  {msg.text && (
+                  {msg.text && msg.type === 'bot' ? (
                     <p 
                       className="text-sm md:text-base leading-relaxed mb-2"
                       dangerouslySetInnerHTML={{ __html: formatText(msg.text) }}
                     />
-                  )}
+                  ) : msg.text ? (
+                    <p className="text-sm md:text-base leading-relaxed mb-2">{msg.text}</p>
+                  ) : null}
                   {msg.image && (
                     <img 
                       src={msg.image} 
