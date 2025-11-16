@@ -88,11 +88,14 @@ const KakapoChatbot = () => {
   const formatText = (text) => {
     if (!text) return '';
     
-    // Convert **text** to <strong>text</strong>
-    let formatted = text.replace(/\*\*([^\*]+)\*\*/g, '<strong>$1</strong>');
+    // First convert **text** to <strong>text</strong>
+    let formatted = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
     
-    // Convert *text* to <em>text</em> (but not if it's already part of **)
-    formatted = formatted.replace(/(?<!\*)\*([^\*]+)\*(?!\*)/g, '<em>$1</em>');
+    // Then convert remaining single * to <em>text</em>
+    formatted = formatted.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    
+    // Convert line breaks to <br> tags
+    formatted = formatted.replace(/\n/g, '<br>');
     
     return formatted;
   };
