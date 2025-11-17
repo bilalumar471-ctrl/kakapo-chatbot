@@ -88,12 +88,12 @@ const KakapoChatbot = () => {
   const formatText = (text) => {
     if (!text) return '';
     
-    console.log('Original text:', text);
+    console.log('Original text:', text); // Debug log
     
     // First convert **text** to <strong>text</strong>
     let formatted = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
     
-    console.log('After bold:', formatted);
+    console.log('After bold:', formatted); // Debug log
     
     // Then convert remaining single * to <em>text</em>
     formatted = formatted.replace(/\*(.+?)\*/g, '<em>$1</em>');
@@ -101,7 +101,7 @@ const KakapoChatbot = () => {
     // Convert line breaks to <br> tags
     formatted = formatted.replace(/\n/g, '<br>');
     
-    console.log('Final formatted:', formatted);
+    console.log('Final formatted:', formatted); // Debug log
     
     return formatted;
   };
@@ -122,7 +122,7 @@ const KakapoChatbot = () => {
   };
 
   // Send message to Dialogflow
-  const sendToDialogflow = async (text, imageBase64 = null) => {
+  const sendToDialogflow = async (text, imageBase64 = null, menuOption = null) => {
     try {
       setIsTyping(true);
       
@@ -146,8 +146,32 @@ const KakapoChatbot = () => {
       
       setIsTyping(false);
       
+      // Add follow-up text based on whether it's a menu option or custom question
+      let followUpText = '';
+      if (menuOption) {
+        // Menu button follow-ups
+        const followUps = [
+          `🌟 Want to dive deeper into **${menuOption}**? Ask me anything! 🦜✨`,
+          `💚 Curious about more **${menuOption}** details? Fire away! 🌿🦜`,
+          `🦜 Got more questions about **${menuOption}**? I'm all ears! 💫`,
+        ];
+        followUpText = followUps[Math.floor(Math.random() * followUps.length)];
+      } else {
+        // Custom question follow-ups
+        const followUps = [
+          `🦜 What else can I help you discover about Kākapos? 🌟`,
+          `✨ Anything else you'd like to know? I'm here for you! 💚`,
+          `🌿 Keep the questions coming! What's next? 🦜💫`,
+          `💚 Fascinated yet? There's so much more to learn! 🦜✨`,
+        ];
+        followUpText = followUps[Math.floor(Math.random() * followUps.length)];
+      }
+      
+      // Combine bot response with follow-up
+      const fullMessage = data.message + '\n\n' + followUpText;
+      
       // Add bot response with image if available
-      addBotMessage(data.message, data.image_url || null);
+      addBotMessage(fullMessage, data.image_url || null);
       
     } catch (error) {
       console.error('Error:', error);
@@ -217,7 +241,7 @@ const KakapoChatbot = () => {
     };
 
     setMessages(prev => [...prev, newMessage]);
-    sendToDialogflow(option);
+    sendToDialogflow(option, null, option); // Pass menu option as third parameter
   };
 
   // Handle image upload
