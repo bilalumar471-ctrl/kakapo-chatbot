@@ -1,24 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Paperclip, RotateCcw } from 'lucide-react';
+import { Send, Mic, MicOff, RotateCcw } from 'lucide-react';
 
 const KakapoChatbot = () => {
   const [screen, setScreen] = useState('loading'); // loading, welcome, chat, error
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(null);
   const [userName, setUserName] = useState('');
   const [isAskingName, setIsAskingName] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef(null);
-  const fileInputRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   // Image URLs
   const images = {
     welcomeBg: '/images/welcome-background.jpg',
-    kakapoOnBranch: '/images/kakapo-on-branch.png',
-    loadingScreen: '/images/loading-screen.png',
-    errorScreen: '/images/error-screen.png',
+    kakapoOnBranch: '/images/kakapo-on-branch.jpg',
+    loadingScreen: '/images/loading-screen.jpg',
+    errorScreen: '/images/error-screen.jpg',
     chatBg: '/images/chat-background.jpg',
     avatar: '/images/avatar.jpg'
   };
@@ -58,6 +58,35 @@ const KakapoChatbot = () => {
     const storedName = localStorage.getItem('kakapo_user_name');
     if (storedName) {
       setUserName(storedName);
+    }
+
+    // Initialize Speech Recognition
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.lang = 'en-US';
+
+      recognitionRef.current.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setInputText(transcript);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+        if (event.error === 'no-speech') {
+          alert('No speech detected. Please try again.');
+        } else if (event.error === 'not-allowed') {
+          alert('Microphone access denied. Please enable microphone permissions.');
+        }
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
     }
   }, []);
 
@@ -122,7 +151,7 @@ const KakapoChatbot = () => {
   };
 
   // Send message to Dialogflow
-  const sendToDialogflow = async (text, imageBase64 = null, menuOption = null) => {
+  const sendToDialogflow = async (text, menuOption = null) => {
     try {
       setIsTyping(true);
       
@@ -133,7 +162,6 @@ const KakapoChatbot = () => {
         },
         body: JSON.stringify({
           message: text,
-          image: imageBase64,
           sessionId: getSessionId()
         })
       });
@@ -241,7 +269,7 @@ const KakapoChatbot = () => {
     };
 
     setMessages(prev => [...prev, newMessage]);
-    sendToDialogflow(option, null, option); // Pass menu option as third parameter
+    sendToDialogflow(option, option); // Pass menu option as second parameter
   };
 
   // Handle image upload
@@ -461,7 +489,7 @@ const KakapoChatbot = () => {
                     <img 
                       src={msg.image} 
                       alt="Kakapo" 
-                      className="rounded-2xl max-w-full h-auto"
+                      className="rounded-2xl max-w-full h-auto mt-2"
                     />
                   )}
                 </div>
@@ -511,17 +539,18 @@ const KakapoChatbot = () => {
       {/* Input Area */}
       <div className="bg-white rounded-3xl shadow-lg mx-4 mb-4 p-3 md:p-4 animate-slide-up">
         <div className="max-w-4xl mx-auto flex items-center gap-2 md:gap-3">
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleImageUpload}
-            accept="image/*"
-            className="hidden"
-          />
           <button
-            onClick={() => fileInputRef.current?.click()}
-            className="p-2 md:p-3 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0">
-            <Paperclip className="w-5 h-5 md:w-6 md:h-6 text-gray-600" />
+            onClick={handleVoiceInput}
+            className={`p-2 md:p-3 rounded-full transition-colors flex-shrink-0 ${
+              isListening 
+                ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
+                : 'hover:bg-gray-100'
+            }`}>
+            {isListening ? (
+              <MicOff className="w-5 h-5 md:w-6 md:h-6 text-white" />
+            ) : (
+              <Mic className="w-5 h-5 md:w-6 md:h-6 text-gray-600" />
+            )}
           </button>
           
           <input
@@ -529,28 +558,17 @@ const KakapoChatbot = () => {
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-            placeholder="Type your message here..."
+            placeholder={isListening ? "Listening..." : "Type your message here..."}
             className="flex-1 px-3 md:px-4 py-2 md:py-3 bg-gray-50 rounded-full outline-none text-sm md:text-base text-gray-700 placeholder-gray-400"
           />
           
           <button
             onClick={handleSendMessage}
-            disabled={!inputText.trim() && !selectedImage}
+            disabled={!inputText.trim()}
             className="bg-gradient-to-r from-green-500 to-green-600 p-3 md:p-4 rounded-full hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md flex-shrink-0">
             <Send className="w-5 h-5 md:w-6 md:h-6 text-white" />
           </button>
         </div>
-        
-        {selectedImage && (
-          <div className="mt-3 relative inline-block">
-            <img src={selectedImage} alt="Selected" className="h-16 md:h-20 rounded-lg" />
-            <button
-              onClick={() => setSelectedImage(null)}
-              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600">
-              ×
-            </button>
-          </div>
-        )}
       </div>
 
       <style>{`
