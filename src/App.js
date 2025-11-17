@@ -479,11 +479,11 @@ const KakapoChatbot = () => {
                 }`}>
                   {msg.text && msg.type === 'bot' ? (
                     <p 
-                      className="text-sm md:text-base leading-relaxed mb-2"
+                      className="text-sm md:text-base leading-relaxed"
                       dangerouslySetInnerHTML={{ __html: formatText(msg.text) }}
                     />
                   ) : msg.text ? (
-                    <p className="text-sm md:text-base leading-relaxed mb-2">{msg.text}</p>
+                    <p className="text-sm md:text-base leading-relaxed">{msg.text}</p>
                   ) : null}
                   {msg.image && (
                     <img 
