@@ -288,7 +288,13 @@ const KakapoChatbot = () => {
     };
 
     setMessages(prev => [...prev, newMessage]);
-    sendMenuOptionToBackend(option);
+    
+    // If option is "Myth", send custom message to Dialogflow
+    if (option === 'Myth') {
+      sendToDialogflow('I want to know kakapo myths', option);
+    } else {
+      sendToDialogflow(option, option);
+    }
   };
 
   const handleResetChat = async () => {
