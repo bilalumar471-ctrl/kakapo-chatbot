@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Send, Mic, MicOff, RotateCcw } from 'lucide-react';
 
 const KakapoChatbot = () => {
-  const [screen, setScreen] = useState('loading'); // loading, welcome, chat, error
+  const [screen, setScreen] = useState('loading');
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -13,17 +13,15 @@ const KakapoChatbot = () => {
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
 
-  // Image URLs
   const images = {
     welcomeBg: '/images/welcome-background.jpg',
-    kakapoOnBranch: '/images/kakapo-on-branch.jpg',
-    loadingScreen: '/images/loading-screen.jpg',
-    errorScreen: '/images/error-screen.jpg',
+    kakapoOnBranch: '/images/kakapo-on-branch.png',
+    loadingScreen: '/images/loading-screen.png',
+    errorScreen: '/images/error-screen.png',
     chatBg: '/images/chat-background.jpg',
     avatar: '/images/avatar.jpg'
   };
 
-  // Menu options
   const menuOptions = [
     'Kakapo Diet',
     'Habitat',
@@ -32,7 +30,6 @@ const KakapoChatbot = () => {
     'General Facts'
   ];
 
-  // Get time-based greeting
   const getTimeBasedGreeting = () => {
     const hour = new Date().getHours();
     if (hour >= 5 && hour < 12) return 'Good morning';
@@ -40,7 +37,6 @@ const KakapoChatbot = () => {
     return 'Good evening';
   };
 
-  // Simulate loading
   useEffect(() => {
     const timer = setTimeout(() => {
       setScreen('welcome');
@@ -48,19 +44,16 @@ const KakapoChatbot = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  // Check for stored username on mount
   useEffect(() => {
     const storedName = localStorage.getItem('kakapo_user_name');
     if (storedName) {
       setUserName(storedName);
     }
 
-    // Initialize Speech Recognition
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
@@ -90,13 +83,11 @@ const KakapoChatbot = () => {
     }
   }, []);
 
-  // Start chat
   const handleStartChat = () => {
     setScreen('chat');
     const storedName = localStorage.getItem('kakapo_user_name');
     
     if (storedName) {
-      // User returning - greet with stored name
       setUserName(storedName);
       setTimeout(() => {
         const greeting = getTimeBasedGreeting();
@@ -104,7 +95,6 @@ const KakapoChatbot = () => {
         setShowMenu(true);
       }, 500);
     } else {
-      // New user - ask for name
       setTimeout(() => {
         const greeting = getTimeBasedGreeting();
         addBotMessage(`${greeting}! 🦜 I'm Mosska, a curious Kakapo here to share my world with you! What's your name?`);
@@ -113,29 +103,16 @@ const KakapoChatbot = () => {
     }
   };
 
-  // Format text with markdown-style bold and italic
   const formatText = (text) => {
     if (!text) return '';
     
-    console.log('Original text:', text); // Debug log
-    
-    // First convert **text** to <strong>text</strong>
     let formatted = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    
-    console.log('After bold:', formatted); // Debug log
-    
-    // Then convert remaining single * to <em>text</em>
     formatted = formatted.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    
-    // Convert line breaks to <br> tags
     formatted = formatted.replace(/\n/g, '<br>');
-    
-    console.log('Final formatted:', formatted); // Debug log
     
     return formatted;
   };
 
-  // Add bot message
   const addBotMessage = (text, imageUrl = null) => {
     const newMessage = {
       id: Date.now(),
@@ -150,7 +127,6 @@ const KakapoChatbot = () => {
     setMessages(prev => [...prev, newMessage]);
   };
 
-  // Send message to Dialogflow
   const sendToDialogflow = async (text, menuOption = null) => {
     try {
       setIsTyping(true);
@@ -174,10 +150,8 @@ const KakapoChatbot = () => {
       
       setIsTyping(false);
       
-      // Add follow-up text based on whether it's a menu option or custom question
       let followUpText = '';
       if (menuOption) {
-        // Menu button follow-ups
         const followUps = [
           `🌟 Want to dive deeper into **${menuOption}**? Ask me anything! 🦜✨`,
           `💚 Curious about more **${menuOption}** details? Fire away! 🌿🦜`,
@@ -185,7 +159,6 @@ const KakapoChatbot = () => {
         ];
         followUpText = followUps[Math.floor(Math.random() * followUps.length)];
       } else {
-        // Custom question follow-ups
         const followUps = [
           `🦜 What else can I help you discover about Kākapos? 🌟`,
           `✨ Anything else you'd like to know? I'm here for you! 💚`,
@@ -195,10 +168,7 @@ const KakapoChatbot = () => {
         followUpText = followUps[Math.floor(Math.random() * followUps.length)];
       }
       
-      // Combine bot response with follow-up
       const fullMessage = data.message + '\n\n' + followUpText;
-      
-      // Add bot response with image if available
       addBotMessage(fullMessage, data.image_url || null);
       
     } catch (error) {
@@ -208,7 +178,6 @@ const KakapoChatbot = () => {
     }
   };
 
-  // Get or create session ID
   const getSessionId = () => {
     let sessionId = sessionStorage.getItem('kakapo_session_id');
     if (!sessionId) {
@@ -218,15 +187,13 @@ const KakapoChatbot = () => {
     return sessionId;
   };
 
-  // Handle send message
   const handleSendMessage = () => {
-    if (!inputText.trim() && !selectedImage) return;
+    if (!inputText.trim()) return;
 
     const newMessage = {
       id: Date.now(),
       type: 'user',
       text: inputText,
-      image: selectedImage,
       timestamp: new Date().toLocaleTimeString('en-US', { 
         hour: '2-digit', 
         minute: '2-digit' 
@@ -235,28 +202,38 @@ const KakapoChatbot = () => {
 
     setMessages(prev => [...prev, newMessage]);
     
-    // Check if asking for name
     if (isAskingName) {
       const name = inputText.trim();
       setUserName(name);
       localStorage.setItem('kakapo_user_name', name);
       setIsAskingName(false);
       
-      // Show personalized greeting
       setTimeout(() => {
         addBotMessage(`Hello ${name}! 🦜 What can I do for you today?`);
         setShowMenu(true);
       }, 500);
     } else {
-      // Send to Dialogflow
-      sendToDialogflow(inputText, selectedImage);
+      sendToDialogflow(inputText);
     }
     
     setInputText('');
-    setSelectedImage(null);
   };
 
-  // Handle menu button click
+  const handleVoiceInput = () => {
+    if (!recognitionRef.current) {
+      alert('Speech recognition is not supported in your browser. Please use Chrome or Edge.');
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      setIsListening(true);
+      recognitionRef.current.start();
+    }
+  };
+
   const handleMenuClick = (option) => {
     const newMessage = {
       id: Date.now(),
@@ -269,25 +246,11 @@ const KakapoChatbot = () => {
     };
 
     setMessages(prev => [...prev, newMessage]);
-    sendToDialogflow(option, option); // Pass menu option as second parameter
+    sendToDialogflow(option, option);
   };
 
-  // Handle image upload
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setSelectedImage(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Handle reset chat
   const handleResetChat = async () => {
     try {
-      // Send "the_end" intent to backend
       await fetch('https://kakapo-backend.onrender.com/chat', {
         method: 'POST',
         headers: {
@@ -302,7 +265,6 @@ const KakapoChatbot = () => {
       console.error('Error resetting:', error);
     }
     
-    // Reset UI and clear localStorage
     setMessages([]);
     setUserName('');
     setShowMenu(false);
@@ -312,7 +274,6 @@ const KakapoChatbot = () => {
     setScreen('welcome');
   };
 
-  // Retry connection
   const handleRetry = () => {
     setScreen('loading');
     setTimeout(() => {
@@ -320,7 +281,6 @@ const KakapoChatbot = () => {
     }, 2000);
   };
 
-  // Loading Screen
   if (screen === 'loading') {
     return (
       <div 
@@ -348,7 +308,6 @@ const KakapoChatbot = () => {
     );
   }
 
-  // Error Screen
   if (screen === 'error') {
     return (
       <div 
@@ -387,7 +346,6 @@ const KakapoChatbot = () => {
     );
   }
 
-  // Welcome Screen
   if (screen === 'welcome') {
     return (
       <div 
@@ -428,7 +386,6 @@ const KakapoChatbot = () => {
     );
   }
 
-  // Chat Screen
   return (
     <div 
       className="min-h-screen flex flex-col bg-cover bg-center"
@@ -436,7 +393,6 @@ const KakapoChatbot = () => {
         backgroundImage: `url('${images.chatBg}')`,
         backgroundColor: '#c8d5b9'
       }}>
-      {/* Header - Sticky */}
       <div className="sticky top-0 z-50 bg-white rounded-b-3xl shadow-lg px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <img 
@@ -456,7 +412,6 @@ const KakapoChatbot = () => {
         </button>
       </div>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 pb-4">
         <div className="max-w-4xl mx-auto space-y-4">
           {messages.map((msg, index) => (
@@ -500,7 +455,6 @@ const KakapoChatbot = () => {
             </div>
           ))}
           
-          {/* Menu Buttons */}
           {showMenu && (
             <div className="flex flex-wrap gap-2 justify-center my-4 animate-fade-in">
               {menuOptions.map((option, index) => (
@@ -514,7 +468,6 @@ const KakapoChatbot = () => {
             </div>
           )}
           
-          {/* Typing Indicator */}
           {isTyping && (
             <div className="flex gap-2 md:gap-3 animate-fade-in">
               <img 
@@ -536,7 +489,6 @@ const KakapoChatbot = () => {
         </div>
       </div>
 
-      {/* Input Area */}
       <div className="bg-white rounded-3xl shadow-lg mx-4 mb-4 p-3 md:p-4 animate-slide-up">
         <div className="max-w-4xl mx-auto flex items-center gap-2 md:gap-3">
           <button
@@ -593,7 +545,6 @@ const KakapoChatbot = () => {
         .animate-slide-up { animation: slide-up 0.6s ease-out; }
         .animate-loading-bar { animation: loading-bar 2.5s ease-out forwards; }
         
-        /* Formatting styles */
         strong { font-weight: 700; }
         em { font-style: italic; }
       `}</style>
@@ -601,4 +552,4 @@ const KakapoChatbot = () => {
   );
 };
 
-export default KakapoChatbot;
+export default KakapoChatbot; 
