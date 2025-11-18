@@ -27,7 +27,9 @@ const KakapoChatbot = () => {
     'Habitat',
     'Conservation',
     'Behaviour',
-    'General Facts'
+    'General Facts',
+    'Fun Fact',
+    'Myth'
   ];
 
   const getTimeBasedGreeting = () => {
@@ -552,4 +554,4 @@ const KakapoChatbot = () => {
   );
 };
 
-export default KakapoChatbot; 
+export default KakapoChatbot;
