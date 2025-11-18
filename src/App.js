@@ -170,8 +170,8 @@ const KakapoChatbot = () => {
         followUpText = followUps[Math.floor(Math.random() * followUps.length)];
       }
       
-      const fullMessage = data.message + '\n\n' + followUpText;
-      addBotMessage(fullMessage, data.image_url || null);
+      const fullMessage = (data.message || data.reply || data.answer || '') + '\n\n' + followUpText;
+      addBotMessage(fullMessage, data.image_url || data.image || null);
       
     } catch (error) {
       console.error('Error:', error);
@@ -266,8 +266,8 @@ const KakapoChatbot = () => {
       ];
       const followUpText = followUps[Math.floor(Math.random() * followUps.length)];
       
-      const fullMessage = data.message + '\n\n' + followUpText;
-      addBotMessage(fullMessage, data.image_url || null);
+      const fullMessage = (data.message || data.reply || data.answer || '') + '\n\n' + followUpText;
+      addBotMessage(fullMessage, data.image_url || data.image || null);
       
     } catch (error) {
       console.error('Error:', error);
@@ -288,7 +288,15 @@ const KakapoChatbot = () => {
     };
 
     setMessages(prev => [...prev, newMessage]);
-    sendMenuOptionToBackend(option);
+
+    // NEW: If option is Myth → use /chat (sendToDialogflow)
+    // All other options use /ask (sendMenuOptionToBackend)
+    if (option === 'Myth') {
+      // Send heading/intent to /chat; menuOption passed so follow-ups use correct label
+      sendToDialogflow(option, option);
+    } else {
+      sendMenuOptionToBackend(option);
+    }
   };
 
   const handleResetChat = async () => {
