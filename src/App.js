@@ -236,46 +236,6 @@ const KakapoChatbot = () => {
     }
   };
 
-  const sendMenuOptionToBackend = async (option) => {
-    try {
-      setIsTyping(true);
-      
-      const response = await fetch('https://kakapo-backend.onrender.com/ask', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          question: option,
-          sessionId: getSessionId()
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Connection failed');
-      }
-
-      const data = await response.json();
-      
-      setIsTyping(false);
-      
-      const followUps = [
-        `🌟 Want to dive deeper into **${option}**? Ask me anything! 🦜✨`,
-        `💚 Curious about more **${option}** details? Fire away! 🌿🦜`,
-        `🦜 Got more questions about **${option}**? I'm all ears! 💫`,
-      ];
-      const followUpText = followUps[Math.floor(Math.random() * followUps.length)];
-      
-      const fullMessage = data.message + '\n\n' + followUpText;
-      addBotMessage(fullMessage, data.image_url || null);
-      
-    } catch (error) {
-      console.error('Error:', error);
-      setIsTyping(false);
-      setScreen('error');
-    }
-  };
-
   const handleMenuClick = (option) => {
     const newMessage = {
       id: Date.now(),
@@ -288,13 +248,7 @@ const KakapoChatbot = () => {
     };
 
     setMessages(prev => [...prev, newMessage]);
-    
-    // If option is "Myth", send custom message to Dialogflow
-    if (option === 'Myth') {
-      sendToDialogflow('I want to know kakapo myths', option);
-    } else {
-      sendToDialogflow(option, option);
-    }
+    sendToDialogflow(option, option);
   };
 
   const handleResetChat = async () => {
