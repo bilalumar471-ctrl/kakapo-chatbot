@@ -182,9 +182,25 @@ const KakapoChatbot = () => {
     const plainText = stripHtmlTags(formatText(text));
     const utterance = new SpeechSynthesisUtterance(plainText);
     
-    utterance.rate = 0.9;
-    utterance.pitch = 1.1;
+    // Bird-like voice settings
+    utterance.rate = 1.1; // Slightly faster for playful effect
+    utterance.pitch = 1.5; // Higher pitch for bird-like sound
     utterance.volume = 1.0;
+
+    // Try to get a female voice for more natural bird-like sound
+    const voices = window.speechSynthesis.getVoices();
+    const femaleVoice = voices.find(voice => 
+      voice.name.includes('Female') || 
+      voice.name.includes('Zira') || 
+      voice.name.includes('Samantha') ||
+      voice.name.includes('Google US English') ||
+      voice.name.includes('Victoria') ||
+      voice.name.includes('Karen')
+    );
+    
+    if (femaleVoice) {
+      utterance.voice = femaleVoice;
+    }
 
     utterance.onstart = () => {
       setIsSpeaking(true);
