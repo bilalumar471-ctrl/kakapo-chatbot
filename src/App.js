@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Mic, MicOff, RotateCcw, Copy, Volume2, VolumeX, Moon, Sun } from 'lucide-react';
+import { Send, Mic, MicOff, RotateCcw, Copy, Volume2, VolumeX, Moon, Sun, ArrowLeft } from 'lucide-react';
 
 const KakapoChatbot = () => {
   const [screen, setScreen] = useState('loading');
@@ -9,6 +9,7 @@ const KakapoChatbot = () => {
   const [userName, setUserName] = useState('');
   const [isAskingName, setIsAskingName] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [menuLevel, setMenuLevel] = useState('main'); // 'main', 'learning', 'quiz'
   const [isListening, setIsListening] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -27,7 +28,12 @@ const KakapoChatbot = () => {
     avatar: '/images/avatar.jpg'
   };
 
-  const menuOptions = [
+  const mainMenuOptions = [
+    { label: '📚 Learning Mode', value: 'learning' },
+    { label: '🎯 Quiz Mode', value: 'quiz' }
+  ];
+
+  const learningMenuOptions = [
     'Kakapo Diet',
     'Habitat',
     'Conservation',
@@ -115,8 +121,9 @@ const KakapoChatbot = () => {
       setUserName(storedName);
       setTimeout(() => {
         const greeting = getTimeBasedGreeting();
-        addBotMessage(`${greeting}, ${storedName}! 🦜 What can I do for you today?`);
+        addBotMessage(`${greeting}, ${storedName}! 🦜 What can I do for you today?\n\nChoose a mode to get started:`);
         setShowMenu(true);
+        setMenuLevel('main');
       }, 500);
     } else {
       setTimeout(() => {
@@ -182,12 +189,10 @@ const KakapoChatbot = () => {
     const plainText = stripHtmlTags(formatText(text));
     const utterance = new SpeechSynthesisUtterance(plainText);
     
-    // Bird-like voice settings
-    utterance.rate = 1.1; // Slightly faster for playful effect
-    utterance.pitch = 1.5; // Higher pitch for bird-like sound
+    utterance.rate = 1.1;
+    utterance.pitch = 1.5;
     utterance.volume = 1.0;
 
-    // Try to get a female voice for more natural bird-like sound
     const voices = window.speechSynthesis.getVoices();
     const femaleVoice = voices.find(voice => 
       voice.name.includes('Female') || 
@@ -303,8 +308,9 @@ const KakapoChatbot = () => {
       setIsAskingName(false);
       
       setTimeout(() => {
-        addBotMessage(`Hello ${name}! 🦜 What can I do for you today?`);
+        addBotMessage(`Hello ${name}! 🦜 What can I do for you today?\n\nChoose a mode to get started:`);
         setShowMenu(true);
+        setMenuLevel('main');
       }, 500);
     } else {
       sendToDialogflow(inputText);
@@ -328,7 +334,30 @@ const KakapoChatbot = () => {
     }
   };
 
-  const handleMenuClick = (option) => {
+  const handleMainMenuClick = (option) => {
+    const newMessage = {
+      id: Date.now(),
+      type: 'user',
+      text: option.label,
+      timestamp: new Date().toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      })
+    };
+
+    setMessages(prev => [...prev, newMessage]);
+
+    if (option.value === 'learning') {
+      setMenuLevel('learning');
+      addBotMessage('📚 **Learning Mode Activated!**\n\nChoose a topic you\'d like to explore:');
+    } else if (option.value === 'quiz') {
+      setMenuLevel('quiz');
+      sendToDialogflow('Take Quiz');
+      setShowMenu(false);
+    }
+  };
+
+  const handleLearningMenuClick = (option) => {
     const newMessage = {
       id: Date.now(),
       type: 'user',
@@ -346,6 +375,22 @@ const KakapoChatbot = () => {
     } else {
       sendToDialogflow(option, option);
     }
+  };
+
+  const handleBackToMain = () => {
+    const newMessage = {
+      id: Date.now(),
+      type: 'user',
+      text: '⬅️ Back to Main Menu',
+      timestamp: new Date().toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      })
+    };
+
+    setMessages(prev => [...prev, newMessage]);
+    setMenuLevel('main');
+    addBotMessage('🦜 Back to the main menu! What would you like to do?');
   };
 
   const handleResetChat = async () => {
@@ -371,6 +416,7 @@ const KakapoChatbot = () => {
     setMessages([]);
     setUserName('');
     setShowMenu(false);
+    setMenuLevel('main');
     setIsAskingName(false);
     sessionStorage.removeItem('kakapo_session_id');
     localStorage.removeItem('kakapo_user_name');
@@ -645,16 +691,39 @@ const KakapoChatbot = () => {
             </div>
           ))}
           
-          {showMenu && (
-            <div className="flex flex-wrap gap-2 justify-center my-4 animate-fade-in">
-              {menuOptions.map((option, index) => (
+          {showMenu && menuLevel === 'main' && (
+            <div className="flex flex-wrap gap-3 justify-center my-4 animate-fade-in">
+              {mainMenuOptions.map((option, index) => (
                 <button
                   key={index}
-                  onClick={() => handleMenuClick(option)}
-                  className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-full text-sm font-semibold hover:from-green-600 hover:to-green-700 transform hover:scale-105 transition-all shadow-md">
-                  {option}
+                  onClick={() => handleMainMenuClick(option)}
+                  className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-full text-base font-semibold hover:from-green-600 hover:to-green-700 transform hover:scale-105 transition-all shadow-md">
+                  {option.label}
                 </button>
               ))}
+            </div>
+          )}
+          
+          {showMenu && menuLevel === 'learning' && (
+            <div className="animate-fade-in my-4">
+              <div className="flex flex-wrap gap-2 justify-center mb-3">
+                {learningMenuOptions.map((option, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleLearningMenuClick(option)}
+                    className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-full text-sm font-semibold hover:from-green-600 hover:to-green-700 transform hover:scale-105 transition-all shadow-md">
+                    {option}
+                  </button>
+                ))}
+              </div>
+              <div className="flex justify-center">
+                <button
+                  onClick={handleBackToMain}
+                  className="bg-gradient-to-r from-gray-500 to-gray-600 text-white px-5 py-2 rounded-full text-sm font-semibold hover:from-gray-600 hover:to-gray-700 transform hover:scale-105 transition-all shadow-md flex items-center gap-2">
+                  <ArrowLeft className="w-4 h-4" />
+                  Back to Main Menu
+                </button>
+              </div>
             </div>
           )}
           
