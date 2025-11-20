@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Mic, MicOff, RotateCcw } from 'lucide-react';
+import { Send, Mic, MicOff, RotateCcw, Copy, Volume2, VolumeX, Moon, Sun } from 'lucide-react';
 
 const KakapoChatbot = () => {
   const [screen, setScreen] = useState('loading');
@@ -10,8 +10,13 @@ const KakapoChatbot = () => {
   const [isAskingName, setIsAskingName] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [currentlySpeakingId, setCurrentlySpeakingId] = useState(null);
+  const [copiedMessageId, setCopiedMessageId] = useState(null);
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
+  const speechSynthesisRef = useRef(null);
 
   const images = {
     welcomeBg: '/images/welcome-background.jpg',
@@ -56,6 +61,11 @@ const KakapoChatbot = () => {
       setUserName(storedName);
     }
 
+    const storedDarkMode = localStorage.getItem('kakapo_dark_mode');
+    if (storedDarkMode === 'true') {
+      setDarkMode(true);
+    }
+
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
@@ -83,7 +93,19 @@ const KakapoChatbot = () => {
         setIsListening(false);
       };
     }
+
+    return () => {
+      if (speechSynthesisRef.current) {
+        window.speechSynthesis.cancel();
+      }
+    };
   }, []);
+
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    localStorage.setItem('kakapo_dark_mode', newMode.toString());
+  };
 
   const handleStartChat = () => {
     setScreen('chat');
@@ -115,6 +137,12 @@ const KakapoChatbot = () => {
     return formatted;
   };
 
+  const stripHtmlTags = (html) => {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+  };
+
   const addBotMessage = (text, imageUrl = null) => {
     const newMessage = {
       id: Date.now(),
@@ -127,6 +155,54 @@ const KakapoChatbot = () => {
       })
     };
     setMessages(prev => [...prev, newMessage]);
+  };
+
+  const handleCopyMessage = async (messageId, text) => {
+    try {
+      const plainText = stripHtmlTags(formatText(text));
+      await navigator.clipboard.writeText(plainText);
+      setCopiedMessageId(messageId);
+      setTimeout(() => setCopiedMessageId(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      alert('Failed to copy message');
+    }
+  };
+
+  const handleTextToSpeech = (messageId, text) => {
+    if (currentlySpeakingId === messageId) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      setCurrentlySpeakingId(null);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const plainText = stripHtmlTags(formatText(text));
+    const utterance = new SpeechSynthesisUtterance(plainText);
+    
+    utterance.rate = 0.9;
+    utterance.pitch = 1.1;
+    utterance.volume = 1.0;
+
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+      setCurrentlySpeakingId(messageId);
+    };
+
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      setCurrentlySpeakingId(null);
+    };
+
+    utterance.onerror = () => {
+      setIsSpeaking(false);
+      setCurrentlySpeakingId(null);
+    };
+
+    speechSynthesisRef.current = utterance;
+    window.speechSynthesis.speak(utterance);
   };
 
   const sendToDialogflow = async (text, menuOption = null) => {
@@ -236,46 +312,6 @@ const KakapoChatbot = () => {
     }
   };
 
-  const sendMenuOptionToBackend = async (option) => {
-    try {
-      setIsTyping(true);
-      
-      const response = await fetch('https://kakapo-backend.onrender.com/ask', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          question: option,
-          sessionId: getSessionId()
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Connection failed');
-      }
-
-      const data = await response.json();
-      
-      setIsTyping(false);
-      
-      const followUps = [
-        `🌟 Want to dive deeper into **${option}**? Ask me anything! 🦜✨`,
-        `💚 Curious about more **${option}** details? Fire away! 🌿🦜`,
-        `🦜 Got more questions about **${option}**? I'm all ears! 💫`,
-      ];
-      const followUpText = followUps[Math.floor(Math.random() * followUps.length)];
-      
-      const fullMessage = data.message + '\n\n' + followUpText;
-      addBotMessage(fullMessage, data.image_url || null);
-      
-    } catch (error) {
-      console.error('Error:', error);
-      setIsTyping(false);
-      setScreen('error');
-    }
-  };
-
   const handleMenuClick = (option) => {
     const newMessage = {
       id: Date.now(),
@@ -289,7 +325,6 @@ const KakapoChatbot = () => {
 
     setMessages(prev => [...prev, newMessage]);
     
-    // If option is "Myth", send custom message to Dialogflow
     if (option === 'Myth') {
       sendToDialogflow('I want to know kakapo myths', option);
     } else {
@@ -298,6 +333,10 @@ const KakapoChatbot = () => {
   };
 
   const handleResetChat = async () => {
+    window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+    setCurrentlySpeakingId(null);
+
     try {
       await fetch('https://kakapo-backend.onrender.com/chat', {
         method: 'POST',
@@ -329,13 +368,37 @@ const KakapoChatbot = () => {
     }, 2000);
   };
 
+  const colors = darkMode ? {
+    welcomeBg: '#0f2a2a',
+    headerBg: '#1a3f3f',
+    headerText: '#a3e635',
+    chatBg: '#1a2f2f',
+    userBubble: 'from-green-600 to-green-700',
+    botBubble: 'from-teal-800 to-teal-900',
+    inputBg: '#2a4444',
+    inputText: '#e5e7eb',
+    timestampText: '#9ca3af',
+    loadingText: '#a3e635'
+  } : {
+    welcomeBg: '#1a3f3f',
+    headerBg: '#ffffff',
+    headerText: '#15803d',
+    chatBg: '#c8d5b9',
+    userBubble: 'from-green-300 to-green-400',
+    botBubble: 'from-teal-700 to-teal-800',
+    inputBg: '#f9fafb',
+    inputText: '#374151',
+    timestampText: '#4b5563',
+    loadingText: '#a3e635'
+  };
+
   if (screen === 'loading') {
     return (
       <div 
         className="min-h-screen bg-cover bg-center flex items-center justify-center p-4"
         style={{
           backgroundImage: `url('${images.welcomeBg}')`,
-          backgroundColor: '#1a3f3f'
+          backgroundColor: colors.welcomeBg
         }}>
         <div className="text-center">
           <img 
@@ -343,7 +406,7 @@ const KakapoChatbot = () => {
             alt="Mosska is loading" 
             className="w-full max-w-lg mx-auto animate-fade-in mb-4"
           />
-          <h2 className="text-2xl md:text-3xl font-bold mb-4" style={{ color: '#a3e635' }}>
+          <h2 className="text-2xl md:text-3xl font-bold mb-4" style={{ color: colors.loadingText }}>
             Mosska is loading...
           </h2>
           <div className="w-96 max-w-full mx-auto">
@@ -362,7 +425,7 @@ const KakapoChatbot = () => {
         className="min-h-screen bg-cover bg-center flex items-center justify-center p-4"
         style={{
           backgroundImage: `url('${images.welcomeBg}')`,
-          backgroundColor: '#1a3f3f'
+          backgroundColor: colors.welcomeBg
         }}>
         <div className="text-center animate-fade-in max-w-2xl">
           <h1 
@@ -400,7 +463,7 @@ const KakapoChatbot = () => {
         className="min-h-screen bg-cover bg-center flex items-center justify-center p-4"
         style={{
           backgroundImage: `url('${images.welcomeBg}')`,
-          backgroundColor: '#1a3f3f'
+          backgroundColor: colors.welcomeBg
         }}>
         <div className="text-center animate-fade-in max-w-2xl">
           <h1 
@@ -436,28 +499,48 @@ const KakapoChatbot = () => {
 
   return (
     <div 
-      className="min-h-screen flex flex-col bg-cover bg-center"
+      className="min-h-screen flex flex-col bg-cover bg-center transition-colors duration-300"
       style={{
         backgroundImage: `url('${images.chatBg}')`,
-        backgroundColor: '#c8d5b9'
+        backgroundColor: colors.chatBg
       }}>
-      <div className="sticky top-0 z-50 bg-white rounded-b-3xl shadow-lg px-4 py-4 flex items-center justify-between">
+      <div 
+        className="sticky top-0 z-50 rounded-b-3xl shadow-lg px-4 py-4 flex items-center justify-between transition-colors duration-300"
+        style={{ backgroundColor: colors.headerBg }}>
         <div className="flex items-center gap-3">
           <img 
             src={images.avatar} 
             alt="Mosska" 
             className="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover shadow-md"
           />
-          <h2 className="text-xl md:text-2xl font-bold text-green-700">
+          <h2 
+            className="text-xl md:text-2xl font-bold"
+            style={{ color: colors.headerText }}>
             {userName ? `Mosska - Chatting with ${userName}` : 'Mosska'}
           </h2>
         </div>
-        <button
-          onClick={handleResetChat}
-          className="p-2 md:p-3 hover:bg-gray-100 rounded-full transition-colors"
-          title="Reset Chat">
-          <RotateCcw className="w-5 h-5 md:w-6 md:h-6 text-gray-600" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleDarkMode}
+            className={`p-2 md:p-3 rounded-full transition-colors ${
+              darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+            }`}
+            title={darkMode ? 'Light Mode' : 'Dark Mode'}>
+            {darkMode ? (
+              <Sun className="w-5 h-5 md:w-6 md:h-6 text-yellow-400" />
+            ) : (
+              <Moon className="w-5 h-5 md:w-6 md:h-6 text-gray-600" />
+            )}
+          </button>
+          <button
+            onClick={handleResetChat}
+            className={`p-2 md:p-3 rounded-full transition-colors ${
+              darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+            }`}
+            title="Reset Chat">
+            <RotateCcw className={`w-5 h-5 md:w-6 md:h-6 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`} />
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-4">
@@ -475,10 +558,10 @@ const KakapoChatbot = () => {
                 />
               )}
               <div className={`max-w-[75%] md:max-w-md lg:max-w-xl ${msg.type === 'user' ? 'order-first' : ''}`}>
-                <div className={`rounded-3xl px-4 md:px-5 py-3 shadow-md ${
+                <div className={`rounded-3xl px-4 md:px-5 py-3 shadow-md bg-gradient-to-br ${
                   msg.type === 'user' 
-                    ? 'bg-gradient-to-br from-green-300 to-green-400 text-gray-900' 
-                    : 'bg-gradient-to-br from-teal-700 to-teal-800 text-white'
+                    ? `${colors.userBubble} text-gray-900` 
+                    : `${colors.botBubble} text-white`
                 }`}>
                   {msg.text && msg.type === 'bot' ? (
                     <p 
@@ -496,7 +579,50 @@ const KakapoChatbot = () => {
                     />
                   )}
                 </div>
-                <p className={`text-xs text-gray-600 mt-1 px-2 ${msg.type === 'user' ? 'text-right' : 'text-left'}`}>
+                
+                {msg.type === 'bot' && (
+                  <div className="flex items-center gap-2 mt-2 px-2">
+                    <button
+                      onClick={() => handleTextToSpeech(msg.id, msg.text)}
+                      className={`p-1.5 rounded-full transition-colors ${
+                        currentlySpeakingId === msg.id
+                          ? 'bg-green-500 text-white'
+                          : darkMode
+                          ? 'hover:bg-gray-700 text-gray-300'
+                          : 'hover:bg-gray-200 text-gray-600'
+                      }`}
+                      title={currentlySpeakingId === msg.id ? 'Stop Speaking' : 'Read Aloud'}>
+                      {currentlySpeakingId === msg.id ? (
+                        <VolumeX className="w-4 h-4" />
+                      ) : (
+                        <Volume2 className="w-4 h-4" />
+                      )}
+                    </button>
+                    
+                    <button
+                      onClick={() => handleCopyMessage(msg.id, msg.text)}
+                      className={`p-1.5 rounded-full transition-colors ${
+                        copiedMessageId === msg.id
+                          ? 'bg-green-500 text-white'
+                          : darkMode
+                          ? 'hover:bg-gray-700 text-gray-300'
+                          : 'hover:bg-gray-200 text-gray-600'
+                      }`}
+                      title={copiedMessageId === msg.id ? 'Copied!' : 'Copy Message'}>
+                      <Copy className="w-4 h-4" />
+                    </button>
+                    
+                    {copiedMessageId === msg.id && (
+                      <span className={`text-xs ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
+                        Copied!
+                      </span>
+                    )}
+                  </div>
+                )}
+                
+                <p 
+                  className={`text-xs mt-1 px-2 ${msg.type === 'user' ? 'text-right' : 'text-left'}`}
+                  style={{ color: colors.timestampText }}>
                   {msg.timestamp}
                 </p>
               </div>
@@ -523,7 +649,7 @@ const KakapoChatbot = () => {
                 alt="Mosska" 
                 className="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover flex-shrink-0 shadow-md"
               />
-              <div className="bg-gradient-to-br from-teal-700 to-teal-800 rounded-3xl px-5 py-4 shadow-md">
+              <div className={`rounded-3xl px-5 py-4 shadow-md bg-gradient-to-br ${colors.botBubble}`}>
                 <div className="flex gap-1">
                   <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
                   <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
@@ -537,19 +663,23 @@ const KakapoChatbot = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl shadow-lg mx-4 mb-4 p-3 md:p-4 animate-slide-up">
+      <div 
+        className="rounded-3xl shadow-lg mx-4 mb-4 p-3 md:p-4 animate-slide-up transition-colors duration-300"
+        style={{ backgroundColor: darkMode ? '#2a4444' : '#ffffff' }}>
         <div className="max-w-4xl mx-auto flex items-center gap-2 md:gap-3">
           <button
             onClick={handleVoiceInput}
             className={`p-2 md:p-3 rounded-full transition-colors flex-shrink-0 ${
               isListening 
                 ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
+                : darkMode
+                ? 'hover:bg-gray-700'
                 : 'hover:bg-gray-100'
             }`}>
             {isListening ? (
               <MicOff className="w-5 h-5 md:w-6 md:h-6 text-white" />
             ) : (
-              <Mic className="w-5 h-5 md:w-6 md:h-6 text-gray-600" />
+              <Mic className={`w-5 h-5 md:w-6 md:h-6 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`} />
             )}
           </button>
           
@@ -559,7 +689,11 @@ const KakapoChatbot = () => {
             onChange={(e) => setInputText(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
             placeholder={isListening ? "Listening..." : "Type your message here..."}
-            className="flex-1 px-3 md:px-4 py-2 md:py-3 bg-gray-50 rounded-full outline-none text-sm md:text-base text-gray-700 placeholder-gray-400"
+            className="flex-1 px-3 md:px-4 py-2 md:py-3 rounded-full outline-none text-sm md:text-base transition-colors duration-300"
+            style={{
+              backgroundColor: colors.inputBg,
+              color: colors.inputText
+            }}
           />
           
           <button
