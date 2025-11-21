@@ -436,7 +436,8 @@ const KakapoChatbot = () => {
 
   if (screen === 'loading') {
     return (
-      <div className="min-h-screen bg-cover bg-center flex items-center justify-center p-4" style={{ backgroundColor: '#1a3f3f' }}>
+      <div className="min-h-screen bg-cover bg-center flex items-center justify-center p-4" 
+        style={{ backgroundImage: `url('${images.welcomeBg}')`, backgroundColor: '#1a3f3f' }}>
         <div className="text-center">
           <img src={images.loadingScreen} alt="Loading" className="w-full max-w-lg mx-auto mb-4" />
           <h2 className="text-2xl md:text-3xl font-bold mb-4" style={{ color: '#a3e635' }}>Mosska is loading...</h2>
@@ -452,7 +453,8 @@ const KakapoChatbot = () => {
 
   if (screen === 'error') {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#1a3f3f' }}>
+      <div className="min-h-screen bg-cover bg-center flex items-center justify-center p-4" 
+        style={{ backgroundImage: `url('${images.welcomeBg}')`, backgroundColor: '#1a3f3f' }}>
         <div className="text-center max-w-2xl">
           <h1 className="text-5xl font-black mb-8 text-red-600">CONNECTION FAILED</h1>
           <img src={images.errorScreen} alt="Error" className="w-full max-w-md mx-auto mb-8" />
@@ -468,7 +470,8 @@ const KakapoChatbot = () => {
 
   if (screen === 'welcome') {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#1a3f3f' }}>
+      <div className="min-h-screen bg-cover bg-center flex items-center justify-center p-4" 
+        style={{ backgroundImage: `url('${images.welcomeBg}')`, backgroundColor: '#1a3f3f' }}>
         <div className="text-center max-w-2xl">
           <h1 className="text-5xl md:text-7xl font-black mb-4" style={{ background: 'linear-gradient(to bottom, #a3e635, #fde047)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             Kia Ora! I'm<br/>KākapoBot!
@@ -485,7 +488,8 @@ const KakapoChatbot = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col relative" style={{ backgroundColor: colors.chatBg }}>
+    <div className="min-h-screen flex flex-col relative bg-cover bg-center" 
+      style={{ backgroundImage: `url('${images.chatBg}')`, backgroundColor: colors.chatBg }}>
       {/* Flying Kakapo */}
       {flyingBirdVisible && (
         <img src={images.flyingKakapo} alt="Flying Kakapo"
@@ -510,10 +514,8 @@ const KakapoChatbot = () => {
           <div className="flex flex-col items-center">
             {/* Branch and Bird */}
             <div className="relative w-80 h-64 flex items-end justify-center">
-              <img src={images.branch} alt="Branch" 
-                className={`absolute bottom-0 w-72 transition-opacity duration-1000 ${birdLanded ? 'opacity-100' : 'opacity-0'}`} />
               <img src={images.kakapoSitting} alt="Kakapo"
-                className={`absolute w-32 transition-all duration-1000 ${birdLanded ? 'bottom-8 opacity-100' : '-bottom-20 opacity-0'} ${voiceModalState === 'speaking' ? 'animate-bird-talk' : ''}`} />
+                className={`absolute w-40 transition-all duration-1000 ${birdLanded ? 'bottom-8 opacity-100' : '-bottom-20 opacity-0'} ${voiceModalState === 'speaking' ? 'animate-bird-talk' : ''}`} />
             </div>
 
             {/* Status Text */}
@@ -548,6 +550,11 @@ const KakapoChatbot = () => {
           </h2>
         </div>
         <div className="flex items-center gap-2">
+          <button onClick={openVoiceModal}
+            className="p-2 rounded-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 transition-colors"
+            title="Voice Conversation Mode">
+            <Phone className="w-5 h-5 text-white" />
+          </button>
           <button onClick={toggleDarkMode} className="p-2 rounded-full hover:bg-gray-100">
             {darkMode ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-gray-600" />}
           </button>
@@ -636,12 +643,6 @@ const KakapoChatbot = () => {
           <button onClick={handleVoiceInput}
             className={`p-2 rounded-full transition-colors ${isListening ? 'bg-red-500 animate-pulse' : 'hover:bg-gray-100'}`}>
             {isListening ? <MicOff className="w-5 h-5 text-white" /> : <Mic className={`w-5 h-5 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`} />}
-          </button>
-          
-          <button onClick={openVoiceModal}
-            className="p-2 rounded-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 transition-colors"
-            title="Voice Conversation Mode">
-            <Phone className="w-5 h-5 text-white" />
           </button>
           
           <input
