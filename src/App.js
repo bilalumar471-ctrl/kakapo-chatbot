@@ -38,9 +38,9 @@ const KakapoChatbot = () => {
   };
 
   const sounds = {
-    chirp: 'https://www.soundjay.com/bird/sounds/bird-chirp-1.mp3',
-    pop: 'https://www.soundjay.com/button/sounds/button-09.mp3',
-    success: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3'
+    chirp: '/images/kakapo_chirp_sound.wav',
+    pop: 'https://www.soundjay.com/buttons/sounds/button-09a.mp3',
+    success: 'https://www.soundjay.com/misc/sounds/bell-ring-01.mp3'
   };
 
   const playSound = (soundType) => {
