@@ -25,7 +25,6 @@ const KakapoChatbot = () => {
   const recognitionRef = useRef(null);
   const speechSynthesisRef = useRef(null);
   const voiceRecognitionRef = useRef(null);
-  const [showIntroVideo, setShowIntroVideo] = useState(false);
 
   const images = {
     welcomeBg: '/images/welcome-background.jpg',
@@ -35,8 +34,7 @@ const KakapoChatbot = () => {
     chatBg: '/images/chat-background.jpg',
     avatar: '/images/avatar.jpg',
     flyingKakapo: '/images/flying-kakapo.png',
-    kakapoSitting: '/images/kakapo-sitting.gif',
-    introVideo: '/images/intro_video.mp4'
+    kakapoSitting: '/images/kakapo-sitting.gif'
   };
 
   const sounds = {
@@ -110,9 +108,9 @@ const KakapoChatbot = () => {
   }, [screen, showVoiceModal]);
 
   useEffect(() => {
-  const timer = setTimeout(() => setScreen('video'), 2500);
-  return () => clearTimeout(timer);
-}, []);
+    const timer = setTimeout(() => setScreen('welcome'), 2500);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -554,28 +552,6 @@ const KakapoChatbot = () => {
       </div>
     );
   }
-
-  if (screen === 'video') {
-  return (
-    <div className="min-h-screen bg-black flex items-center justify-center">
-      <div className="relative w-full max-w-4xl">
-        <video 
-          autoPlay 
-          onEnded={() => setScreen('welcome')}
-          className="w-full rounded-2xl shadow-2xl"
-        >
-          <source src="/videos/intro-video.mp4" type="video/mp4" />
-        </video>
-        <button 
-          onClick={() => setScreen('welcome')}
-          className="absolute top-4 right-4 bg-white bg-opacity-20 hover:bg-opacity-40 text-white px-4 py-2 rounded-full font-semibold transition-all"
-        >
-          Skip
-        </button>
-      </div>
-    </div>
-  );
-}
 
   if (screen === 'welcome') {
     return (
