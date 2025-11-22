@@ -602,7 +602,7 @@ const KakapoChatbot = () => {
           <div className="flex flex-col items-center">
             <div className="relative w-[500px] h-[450px] flex items-center justify-center">
               <img src={images.kakapoSitting} alt="Kakapo"
-                className={`w-80 h-80 object-contain transition-all duration-1000 ${birdLanded ? 'opacity-100 scale-100' : 'opacity-0 scale-50'} ${voiceModalState === 'speaking' ? 'animate-bird-talk' : ''}`} />
+                className={`w-150 h-150 object-contain transition-all duration-1000 ${birdLanded ? 'opacity-100 scale-100' : 'opacity-0 scale-50'} ${voiceModalState === 'speaking' ? 'animate-bird-talk' : ''}`} />
               
               {voiceModalState === 'speaking' && (
                 <div className="absolute inset-0 flex items-center justify-center">
